@@ -53,9 +53,9 @@ export const DashboardSidebar = () => {
         </div>
         {isMobile && (
           <SidebarTrigger>
-            {({ isOpen }: { isOpen: boolean }) => (
-              isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />
-            )}
+            {/* Fix: Use proper ReactNode pattern instead of function */}
+            <Menu className="h-5 w-5 md:hidden" data-hide-when-open />
+            <X className="h-5 w-5 md:hidden" data-show-when-open />
           </SidebarTrigger>
         )}
       </SidebarHeader>
