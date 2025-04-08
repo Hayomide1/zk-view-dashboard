@@ -71,19 +71,19 @@ export const DashboardSidebar = () => {
             href="/networks" 
             icon={BarChart3} 
             label="Networks" 
-            isActive={pathname === '/networks'}
+            isActive={pathname.includes('/networks')}
           />
           <SidebarLink 
             href="/transactions" 
             icon={History} 
             label="Transactions" 
-            isActive={pathname === '/transactions'}
+            isActive={pathname.includes('/transactions')}
           />
           <SidebarLink 
             href="/settings" 
             icon={Settings} 
             label="Settings" 
-            isActive={pathname === '/settings'}
+            isActive={pathname.includes('/settings')}
           />
         </SidebarMenu>
       </SidebarContent>
