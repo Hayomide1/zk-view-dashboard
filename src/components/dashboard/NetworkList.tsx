@@ -36,7 +36,7 @@ export const NetworkList = ({ networks }: NetworkListProps) => {
               <Progress 
                 value={percentage} 
                 className="h-2"
-                indicatorClassName={`bg-${network.color}`}
+                indicatorClassName="bg-pink-300"
               />
               <div className="text-xs text-muted-foreground">
                 {percentage.toFixed(1)}% ZK Transactions

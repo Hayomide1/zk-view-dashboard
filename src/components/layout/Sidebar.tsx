@@ -48,12 +48,12 @@ export const DashboardSidebar = () => {
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="py-4 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="h-6 w-6 text-zkpurple" />
+          <Zap className="h-6 w-6 text-pink-300" />
           <span className="font-bold text-lg">ZK View</span>
         </div>
         {isMobile && (
           <SidebarTrigger>
-            {({ isOpen }) => (
+            {({ isOpen }: { isOpen: boolean }) => (
               isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />
             )}
           </SidebarTrigger>
