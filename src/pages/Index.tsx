@@ -6,6 +6,8 @@ import { NetworkList } from '@/components/dashboard/NetworkList';
 import { ZKTransactionsChart } from '@/components/dashboard/ZKTransactionsChart';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { Clock, Zap, Activity, BarChart3 } from 'lucide-react';
+import { useTransactionHistory, useNetworksData, useRecentTransactions, useStatsData } from '@/lib/api';
+import { useWallet } from '@/lib/wallet-context';
 import { 
   generateTransactionHistoryData, 
   getNetworksData, 
@@ -14,11 +16,26 @@ import {
 } from '@/lib/mock-data';
 
 const Index = () => {
-  // In a real app, this would fetch data from an API
-  const transactionHistoryData = generateTransactionHistoryData();
-  const networksData = getNetworksData();
-  const recentTransactions = getRecentTransactions();
-  const statsData = getStatsData();
+  const { walletAddress } = useWallet();
+  
+  // Use real data if we have a wallet address, otherwise fall back to mock data
+  const { data: transactionHistoryData, isLoading: isLoadingHistory } = 
+    useTransactionHistory(walletAddress);
+  
+  const { data: networksData, isLoading: isLoadingNetworks } = 
+    useNetworksData(walletAddress);
+  
+  const { data: recentTransactions, isLoading: isLoadingTransactions } = 
+    useRecentTransactions(walletAddress);
+  
+  const { data: statsData, isLoading: isLoadingStats } = 
+    useStatsData(walletAddress);
+  
+  // Fall back to mock data if API data is loading
+  const displayTransactionHistory = isLoadingHistory ? generateTransactionHistoryData() : transactionHistoryData;
+  const displayNetworksData = isLoadingNetworks ? getNetworksData() : networksData;
+  const displayRecentTransactions = isLoadingTransactions ? getRecentTransactions() : recentTransactions;
+  const displayStatsData = isLoadingStats ? getStatsData() : statsData;
   
   return (
     <DashboardLayout>
@@ -38,28 +55,28 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
             title="Total ZK Transactions" 
-            value={statsData.totalZkTransactions} 
+            value={displayStatsData?.totalZkTransactions || '0'} 
             icon={Zap}
             trend="up"
             trendValue="12.3% this month"
           />
           <StatCard 
             title="Daily ZK Transactions" 
-            value={statsData.dailyZkTransactions} 
+            value={displayStatsData?.dailyZkTransactions || '0'} 
             icon={Activity}
             trend="up"
             trendValue="8.7% vs yesterday"
           />
           <StatCard 
             title="ZK % of Total" 
-            value={statsData.zkPercentage} 
+            value={displayStatsData?.zkPercentage || '0%'} 
             icon={BarChart3}
             trend="up"
             trendValue="2.1% increase"
           />
           <StatCard 
             title="Avg. Confirmation Time" 
-            value={statsData.avgConfirmationTime} 
+            value={displayStatsData?.avgConfirmationTime || '0s'} 
             icon={Clock}
             trend="down"
             trendValue="0.8s faster"
@@ -68,15 +85,15 @@ const Index = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <ZKTransactionsChart data={transactionHistoryData} />
+            <ZKTransactionsChart data={displayTransactionHistory || []} />
           </div>
           <div>
-            <NetworkList networks={networksData} />
+            <NetworkList networks={displayNetworksData || []} />
           </div>
         </div>
         
         <div>
-          <RecentTransactions transactions={recentTransactions} />
+          <RecentTransactions transactions={displayRecentTransactions || []} />
         </div>
       </div>
     </DashboardLayout>
