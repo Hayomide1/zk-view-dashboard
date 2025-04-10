@@ -7,6 +7,10 @@ interface WalletContextType {
   setWalletAddress: (address: string) => void;
   etherscanApiKey: string;
   setEtherscanApiKey: (key: string) => void;
+  useZkSync: boolean;
+  setUseZkSync: (use: boolean) => void;
+  zkSyncNetwork: 'mainnet' | 'testnet';
+  setZkSyncNetwork: (network: 'mainnet' | 'testnet') => void;
 }
 
 const WalletContext = createContext<WalletContextType>({
@@ -14,6 +18,10 @@ const WalletContext = createContext<WalletContextType>({
   setWalletAddress: () => {},
   etherscanApiKey: '',
   setEtherscanApiKey: () => {},
+  useZkSync: false,
+  setUseZkSync: () => {},
+  zkSyncNetwork: 'mainnet',
+  setZkSyncNetwork: () => {},
 });
 
 export const useWallet = () => useContext(WalletContext);
@@ -29,6 +37,17 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return savedKey || '';
   });
 
+  // zkSync integration settings
+  const [useZkSync, setUseZkSync] = useState(() => {
+    const savedPreference = localStorage.getItem('useZkSync');
+    return savedPreference ? JSON.parse(savedPreference) : false;
+  });
+  
+  const [zkSyncNetwork, setZkSyncNetwork] = useState<'mainnet' | 'testnet'>(() => {
+    const savedNetwork = localStorage.getItem('zkSyncNetwork');
+    return (savedNetwork as 'mainnet' | 'testnet') || 'mainnet';
+  });
+
   // Persist API key to localStorage when it changes
   React.useEffect(() => {
     if (etherscanApiKey) {
@@ -36,12 +55,25 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [etherscanApiKey]);
 
+  // Persist zkSync settings to localStorage
+  React.useEffect(() => {
+    localStorage.setItem('useZkSync', JSON.stringify(useZkSync));
+  }, [useZkSync]);
+
+  React.useEffect(() => {
+    localStorage.setItem('zkSyncNetwork', zkSyncNetwork);
+  }, [zkSyncNetwork]);
+
   return (
     <WalletContext.Provider value={{ 
       walletAddress, 
       setWalletAddress, 
       etherscanApiKey, 
-      setEtherscanApiKey 
+      setEtherscanApiKey,
+      useZkSync,
+      setUseZkSync,
+      zkSyncNetwork,
+      setZkSyncNetwork
     }}>
       {children}
     </WalletContext.Provider>

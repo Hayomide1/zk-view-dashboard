@@ -6,8 +6,15 @@ import { NetworkList } from '@/components/dashboard/NetworkList';
 import { ZKTransactionsChart } from '@/components/dashboard/ZKTransactionsChart';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { ApiKeyInput } from '@/components/dashboard/ApiKeyInput';
+import { ZkSyncToggle } from '@/components/dashboard/ZkSyncToggle';
 import { Clock, Zap, Activity, BarChart3, RefreshCw } from 'lucide-react';
 import { useTransactionHistory, useNetworksData, useRecentTransactions, useStatsData } from '@/lib/api';
+import { 
+  useZkSyncTransactionHistory, 
+  useZkSyncNetworksData, 
+  useZkSyncRecentTransactions, 
+  useZkSyncStatsData 
+} from '@/lib/zksync-api';
 import { useWallet } from '@/lib/wallet-context';
 import { 
   generateTransactionHistoryData, 
@@ -19,76 +26,129 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const { walletAddress, etherscanApiKey } = useWallet();
+  const { walletAddress, etherscanApiKey, useZkSync } = useWallet();
   
+  // Etherscan API queries
   const { 
-    data: transactionHistoryData, 
-    isLoading: isLoadingHistory,
-    refetch: refetchHistory,
-    isError: isErrorHistory,
+    data: etherscanTransactionHistory, 
+    isLoading: isLoadingEthHistory,
+    refetch: refetchEthHistory,
+    isError: isErrorEthHistory,
   } = useTransactionHistory(walletAddress);
   
   const { 
-    data: networksData, 
-    isLoading: isLoadingNetworks,
-    refetch: refetchNetworks,
-    isError: isErrorNetworks,
+    data: etherscanNetworksData, 
+    isLoading: isLoadingEthNetworks,
+    refetch: refetchEthNetworks,
+    isError: isErrorEthNetworks,
   } = useNetworksData(walletAddress);
   
   const { 
-    data: recentTransactions, 
-    isLoading: isLoadingTransactions,
-    refetch: refetchTransactions,
-    isError: isErrorTransactions,
+    data: etherscanRecentTransactions, 
+    isLoading: isLoadingEthTransactions,
+    refetch: refetchEthTransactions,
+    isError: isErrorEthTransactions,
   } = useRecentTransactions(walletAddress);
   
   const { 
-    data: statsData, 
-    isLoading: isLoadingStats,
-    refetch: refetchStats,
-    isError: isErrorStats,
+    data: etherscanStatsData, 
+    isLoading: isLoadingEthStats,
+    refetch: refetchEthStats,
+    isError: isErrorEthStats,
   } = useStatsData(walletAddress);
 
+  // zkSync API queries
+  const { 
+    data: zkSyncTransactionHistory, 
+    isLoading: isLoadingZkHistory,
+    refetch: refetchZkHistory,
+    isError: isErrorZkHistory,
+  } = useZkSyncTransactionHistory(walletAddress);
+  
+  const { 
+    data: zkSyncNetworksData, 
+    isLoading: isLoadingZkNetworks,
+    refetch: refetchZkNetworks,
+    isError: isErrorZkNetworks,
+  } = useZkSyncNetworksData(walletAddress);
+  
+  const { 
+    data: zkSyncRecentTransactions, 
+    isLoading: isLoadingZkTransactions,
+    refetch: refetchZkTransactions,
+    isError: isErrorZkTransactions,
+  } = useZkSyncRecentTransactions(walletAddress);
+  
+  const { 
+    data: zkSyncStatsData, 
+    isLoading: isLoadingZkStats,
+    refetch: refetchZkStats,
+    isError: isErrorZkStats,
+  } = useZkSyncStatsData(walletAddress);
+
   const refreshAllData = () => {
-    if (!etherscanApiKey) {
+    if (useZkSync) {
       toast({
-        title: "API Key Required",
-        description: "Please enter your Etherscan API key to fetch real data",
-        variant: "destructive",
+        title: "Refreshing zkSync Data",
+        description: "Fetching the latest zkSync blockchain data...",
       });
-      return;
+      refetchZkHistory();
+      refetchZkNetworks();
+      refetchZkTransactions();
+      refetchZkStats();
+    } else {
+      if (!etherscanApiKey) {
+        toast({
+          title: "API Key Required",
+          description: "Please enter your Etherscan API key to fetch real data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Refreshing Etherscan Data",
+        description: "Fetching the latest blockchain data...",
+      });
+      refetchEthHistory();
+      refetchEthNetworks();
+      refetchEthTransactions();
+      refetchEthStats();
     }
-
-    toast({
-      title: "Refreshing Data",
-      description: "Fetching the latest blockchain data...",
-    });
-
-    refetchHistory();
-    refetchNetworks();
-    refetchTransactions();
-    refetchStats();
   };
   
+  // Determine which data to display based on the selected API
+  const isLoadingHistory = useZkSync ? isLoadingZkHistory : isLoadingEthHistory;
+  const isLoadingNetworks = useZkSync ? isLoadingZkNetworks : isLoadingEthNetworks;
+  const isLoadingTransactions = useZkSync ? isLoadingZkTransactions : isLoadingEthTransactions;
+  const isLoadingStats = useZkSync ? isLoadingZkStats : isLoadingEthStats;
+  
+  const isErrorHistory = useZkSync ? isErrorZkHistory : isErrorEthHistory;
+  const isErrorNetworks = useZkSync ? isErrorZkNetworks : isErrorEthNetworks;
+  const isErrorTransactions = useZkSync ? isErrorZkTransactions : isErrorEthTransactions;
+  const isErrorStats = useZkSync ? isErrorZkStats : isErrorEthStats;
+  
   // Fall back to mock data if API data is loading or there's an error
-  const displayTransactionHistory = !etherscanApiKey || isLoadingHistory || isErrorHistory 
-    ? generateTransactionHistoryData() 
-    : transactionHistoryData || generateTransactionHistoryData();
+  const displayTransactionHistory = useZkSync 
+    ? (isLoadingZkHistory || isErrorZkHistory ? generateTransactionHistoryData() : zkSyncTransactionHistory || generateTransactionHistoryData())
+    : (!etherscanApiKey || isLoadingEthHistory || isErrorEthHistory ? generateTransactionHistoryData() : etherscanTransactionHistory || generateTransactionHistoryData());
 
-  const displayNetworksData = !etherscanApiKey || isLoadingNetworks || isErrorNetworks 
-    ? getNetworksData() 
-    : networksData || getNetworksData();
+  const displayNetworksData = useZkSync
+    ? (isLoadingZkNetworks || isErrorZkNetworks ? getNetworksData() : zkSyncNetworksData || getNetworksData())
+    : (!etherscanApiKey || isLoadingEthNetworks || isErrorEthNetworks ? getNetworksData() : etherscanNetworksData || getNetworksData());
 
-  const displayRecentTransactions = !etherscanApiKey || isLoadingTransactions || isErrorTransactions 
-    ? getRecentTransactions() 
-    : recentTransactions || getRecentTransactions();
+  const displayRecentTransactions = useZkSync
+    ? (isLoadingZkTransactions || isErrorZkTransactions ? getRecentTransactions() : zkSyncRecentTransactions || getRecentTransactions())
+    : (!etherscanApiKey || isLoadingEthTransactions || isErrorEthTransactions ? getRecentTransactions() : etherscanRecentTransactions || getRecentTransactions());
 
-  const displayStatsData = !etherscanApiKey || isLoadingStats || isErrorStats 
-    ? getStatsData() 
-    : statsData || getStatsData();
+  const displayStatsData = useZkSync
+    ? (isLoadingZkStats || isErrorZkStats ? getStatsData() : zkSyncStatsData || getStatsData())
+    : (!etherscanApiKey || isLoadingEthStats || isErrorEthStats ? getStatsData() : etherscanStatsData || getStatsData());
   
   // Are we showing real or mock data?
-  const usingMockData = !etherscanApiKey || isErrorHistory || isErrorNetworks || isErrorTransactions || isErrorStats;
+  const usingMockData = useZkSync
+    ? (isErrorZkHistory || isErrorZkNetworks || isErrorZkTransactions || isErrorZkStats)
+    : (!etherscanApiKey || isErrorEthHistory || isErrorEthNetworks || isErrorEthTransactions || isErrorEthStats);
   
   return (
     <DashboardLayout>
@@ -101,7 +161,7 @@ const Index = () => {
               size="sm" 
               className="gap-2" 
               onClick={refreshAllData}
-              disabled={!etherscanApiKey || isLoadingHistory || isLoadingNetworks || isLoadingTransactions || isLoadingStats}
+              disabled={(!etherscanApiKey && !useZkSync) || isLoadingHistory || isLoadingNetworks || isLoadingTransactions || isLoadingStats}
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -117,12 +177,17 @@ const Index = () => {
           </div>
         </div>
 
-        {/* API Key Input */}
-        <ApiKeyInput />
+        {/* API Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ZkSyncToggle />
+          {!useZkSync && <ApiKeyInput />}
+        </div>
         
         {usingMockData && (
           <div className="text-sm text-center py-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
-            Displaying mock data. Enter an Etherscan API key above to view real blockchain data.
+            {useZkSync 
+              ? "Displaying mock data. zkSync API may be experiencing issues."
+              : "Displaying mock data. Enter an Etherscan API key above to view real blockchain data."}
           </div>
         )}
         
